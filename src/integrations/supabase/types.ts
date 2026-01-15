@@ -321,6 +321,7 @@ export type Database = {
           numero: string | null
           razao_social: string | null
           regime_tributario: string | null
+          status: string
           telefone: string | null
           updated_at: string
         }
@@ -346,6 +347,7 @@ export type Database = {
           numero?: string | null
           razao_social?: string | null
           regime_tributario?: string | null
+          status?: string
           telefone?: string | null
           updated_at?: string
         }
@@ -371,6 +373,7 @@ export type Database = {
           numero?: string | null
           razao_social?: string | null
           regime_tributario?: string | null
+          status?: string
           telefone?: string | null
           updated_at?: string
         }
