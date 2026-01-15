@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfileStatus } from "@/hooks/useProfileStatus";
 import { Loader2, Headset } from "lucide-react";
 import {
   SidebarProvider,
@@ -44,15 +45,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const breadcrumb = useDashboardBreadcrumb();
+  const { data: approvalStatus, isLoading: statusLoading } = useProfileStatus();
+
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [companyLoading, setCompanyLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate("/auth");
+      navigate("/auth", { replace: true });
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!loading && user && !statusLoading && approvalStatus === "pending") {
+      navigate("/pending-approval", { replace: true });
+    }
+  }, [loading, user, statusLoading, approvalStatus, navigate]);
 
   useEffect(() => {
     const loadCompanyName = async () => {
@@ -82,7 +91,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     loadCompanyName();
   }, [user?.id]);
 
-  if (loading) {
+  if (loading || (user && statusLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-ice">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
