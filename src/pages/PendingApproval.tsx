@@ -1,14 +1,17 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Loader2, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Loader2, ShieldCheck, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useApprovalProfile } from "@/hooks/useProfileStatus";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function PendingApproval() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { user, loading, signOut } = useAuth();
-  const { data: approvalProfile, isLoading: statusLoading } = useApprovalProfile();
+  const { data: approvalProfile, isLoading: statusLoading, refetch } = useApprovalProfile();
 
   const status = approvalProfile?.status ?? "pending";
   const rejectionReason = approvalProfile?.rejection_reason ?? null;
@@ -26,6 +29,45 @@ export default function PendingApproval() {
 
   const whatsappUrl =
     "https://wa.me/5543991521870?text=Ol%C3%A1!%20Preciso%20de%20ajuda%20com%20o%20status%20da%20minha%20conta.";
+
+  const onResubmit = async () => {
+    if (!user?.id || !user.email) return;
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ status: "pending", rejection_reason: null })
+      .eq("id", user.id);
+
+    if (updateError) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao solicitar nova análise",
+        description: updateError.message,
+      });
+      return;
+    }
+
+    const { error: logError } = await supabase.from("admin_audit_logs").insert({
+      admin_id: user.id,
+      admin_email: user.email,
+      target_user_id: user.id,
+      target_email: user.email,
+      action: "resubmitted",
+      details: null,
+    });
+
+    // Se o log falhar, não bloqueia o usuário (a resubmissão já foi feita)
+    if (logError) {
+      console.error("Falha ao registrar log de resubmissão", logError);
+    }
+
+    await refetch();
+
+    toast({
+      title: "Solicitação reenviada",
+      description: "Sua conta voltou para análise. Aguarde a aprovação.",
+    });
+  };
 
   if (loading || (user && statusLoading)) {
     return (
@@ -66,9 +108,7 @@ export default function PendingApproval() {
 
             {isRejected ? (
               <div className="w-full rounded-xl border border-destructive/20 bg-destructive/5 p-4">
-                <p className="text-sm font-medium text-foreground mb-1">
-                  Motivo informado
-                </p>
+                <p className="text-sm font-medium text-foreground mb-1">Motivo informado</p>
                 <p className="text-sm text-muted-foreground">
                   {rejectionReason?.trim()
                     ? rejectionReason
@@ -85,6 +125,13 @@ export default function PendingApproval() {
           </div>
 
           <div className="flex flex-col gap-3">
+            {isRejected && (
+              <Button type="button" className="w-full gap-2" onClick={onResubmit}>
+                <RotateCcw className="h-4 w-4" />
+                Solicitar Nova Análise
+              </Button>
+            )}
+
             <Button asChild variant="default" className="w-full">
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
                 Falar com Suporte
