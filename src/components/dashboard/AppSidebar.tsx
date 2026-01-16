@@ -1,4 +1,4 @@
-import React from "react";
+import { useMemo } from "react";
 import {
   LayoutDashboard,
   FileText,
@@ -9,11 +9,13 @@ import {
   FolderOpen,
   BarChart3,
   Repeat,
+  ShieldCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client"; // eslint-disable-line @typescript-eslint/no-unused-vars
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import {
   Sidebar,
   SidebarContent,
@@ -29,7 +31,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
-const menuItems = [
+const baseMenuItems = [
   { title: "Visão Geral", url: "/dashboard", icon: LayoutDashboard },
   { title: "Emitir Nota", url: "/dashboard/emitir-nota", icon: FileText },
   { title: "Recorrência", url: "/dashboard/recorrencia", icon: Repeat },
@@ -38,7 +40,7 @@ const menuItems = [
   { title: "Meus Clientes", url: "/dashboard/clientes", icon: Users },
   { title: "Relatórios", url: "/dashboard/relatorios", icon: BarChart3 },
   { title: "Configurações", url: "/dashboard/configuracoes", icon: Settings },
-];
+] as const;
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -46,6 +48,29 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      if (!user?.id) return false;
+      const { data, error } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
+      });
+      if (error) return false;
+      return Boolean(data);
+    },
+    staleTime: 30_000,
+  });
+
+  const menuItems = useMemo(() => {
+    if (!isAdmin) return [...baseMenuItems];
+    return [
+      ...baseMenuItems,
+      { title: "Administração", url: "/admin", icon: ShieldCheck },
+    ];
+  }, [isAdmin]);
 
   const isActive = (path: string) => {
     if (path === "/dashboard") {
