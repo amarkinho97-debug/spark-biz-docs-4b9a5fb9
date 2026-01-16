@@ -80,6 +80,30 @@ export type Database = {
         }
         Relationships: []
       }
+      approval_audit_logs: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string
+          id: string
+          target_user_id: string
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string
+          id?: string
+          target_user_id: string
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           created_at: string
@@ -321,6 +345,7 @@ export type Database = {
           numero: string | null
           razao_social: string | null
           regime_tributario: string | null
+          rejection_reason: string | null
           status: string
           telefone: string | null
           updated_at: string
@@ -347,6 +372,7 @@ export type Database = {
           numero?: string | null
           razao_social?: string | null
           regime_tributario?: string | null
+          rejection_reason?: string | null
           status?: string
           telefone?: string | null
           updated_at?: string
@@ -373,6 +399,7 @@ export type Database = {
           numero?: string | null
           razao_social?: string | null
           regime_tributario?: string | null
+          rejection_reason?: string | null
           status?: string
           telefone?: string | null
           updated_at?: string

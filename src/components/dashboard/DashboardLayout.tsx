@@ -58,7 +58,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    if (!loading && user && !statusLoading && approvalStatus === "pending") {
+    if (!loading && user && !statusLoading && (approvalStatus === "pending" || approvalStatus === "rejected")) {
       navigate("/pending-approval", { replace: true });
     }
   }, [loading, user, statusLoading, approvalStatus, navigate]);
